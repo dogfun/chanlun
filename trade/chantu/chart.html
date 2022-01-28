@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>echarts</title>
+    <script src="echarts.min.js"></script>
+    <script src="jquery-1.10.1.min.js"></script>
+    <style>
+        *{margin:0;padding:0}
+        html,body{
+
+            width:100%;
+            height:100%;
+        }
+        #main{
+            width:100%;
+            height:100%;
+        }
+    </style>
+</head>
+<body>
+<div id="main"></div>
+<script type="text/javascript">
+    setInterval(function () {
+        var maxHeight= $(document.body).outerHeight(true);
+        $("#main").height(maxHeight);
+    },1)
+    var myChart = echarts.init(document.getElementById('main'));
+    var color_green = '#6fffee';
+    var color_red = '#ff0f0f';
+
+    function getData(rawData) {
+        var date = [];
+        var values = [];
+        var volumes = [];
+        var data = {};
+        for (var i = 0; i < rawData.length; i++) {
+            date.push(rawData[i].splice(0, 1)[0]);
+            values.push(rawData[i]);
+            volumes.push([i, rawData[i][4], rawData[i][0] > rawData[i][1] ? 1 : -1]);
+        }
+        data.date = date;
+        data.values = values;
+        data.volumes = volumes;
+        return data;
+    }
+
+    var option = {
+        animation: false,
+        backgroundColor: '#111111',
+        legend: {  // 图例
+            data: ['K线', '笔', '线段', '中枢', '一买', '二买', '三买', '一卖', '二卖', '三卖'],
+            inactiveColor: '#5f5f5f',
+            textStyle: {
+                color: '#ffffff'
+            }
+        },
+        toolbox: {  // 工具栏
+            show: true,
+            feature: {
+                dataZoom: {  // 缩放
+                    yAxisIndex: 'none'
+                },
+                restore: {}  // 还原
+            }
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                animation: false,
+                type: 'cross',
+                lineStyle: {
+                    color: '#adadad',
+                    width: 1,
+                    opacity: 0.5,
+                    type: 'dashed'
+                }
+            },
+            position: function (pos, params, el, elRect, size) {  // 设置提示框位置
+                var obj = {top: 10};
+                obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                return obj;
+            }
+        },
+        axisPointer: {
+            link: {xAxisIndex: 'all'},
+        },
+        xAxis: [{  // K线图
+            show: true,
+            type: 'category',
+            data: [],
+            scale: true,
+            gridIndex:0,
+            axisLabel: {show: false},
+            axisPointer:{
+                label:{show: false}
+            },
+            axisLine: { lineStyle: { color: '#AABCD4' } }
+        },{  // MACD
+            type: 'category',
+            show: true,
+            data: [],
+            scale: true,
+            gridIndex:1,
+            axisLabel: {show: false},
+            axisPointer:{
+                label:{show: false}
+            },
+            axisLine: { lineStyle: { color: '#AABCD4' } }
+        },{  // 成交量
+            type: 'category',
+            show: true,
+            data: [],
+            scale: true,
+            gridIndex:2,
+            axisLine: { lineStyle: { color: '#AABCD4' } }
+        }],
+        yAxis: [{  // K线图
+            scale: true,
+            gridIndex: 0,
+            axisLine: { lineStyle: { color: '#AABCD4' } },
+            splitNumber: 6,
+            splitLine: {
+                show: true,
+                lineStyle:{color: '#660000', type: 'dotted'}
+            }
+        },{  // MACD
+            scale: true,
+            gridIndex: 1,
+            axisLine: { lineStyle: { color: '#AABCD4' } },
+            splitLine: {
+                show: true,
+                lineStyle:{color: '#660000', type: 'dotted'}
+            }
+        },{  // 成交量
+            scale: true,
+            gridIndex: 2,
+            axisLine: { lineStyle: { color: '#AABCD4' } },
+            splitNumber: 2,
+            splitLine: {
+                show: true,
+                lineStyle:{color: '#660000', type: 'dotted'}
+            }
+        }],
+        visualMap: [{
+            show: false,
+            seriesIndex: 7,  // series第7个为成交量
+            pieces: [{
+                value: 1,
+                color: color_green
+            }, {
+                value: -1,
+                color: color_red
+            }]
+        }],
+        grid: [
+            {
+                top: '3%',
+                height: '58%'
+            },
+            {
+                top: '63%',
+                height: '20%'
+            },
+            {
+                top: '85%',
+                height: '10%'
+            }
+        ],
+        dataZoom: [
+            {
+                type: 'inside',
+                start:80,
+                xAxisIndex:[0,1,2] //控件联动
+            },{
+                type: 'slider',
+                start:80,
+                xAxisIndex:[0,1,2],
+                show: true,
+                textStyle: {
+                    color: '#8392A5'
+                },
+                handleSize: '80%',
+                dataBackground: {
+                    areaStyle: {
+                        color: '#8392A5'
+                    },
+                    lineStyle: {
+                        opacity: 0.8,
+                        color: '#8392A5'
+                    }
+                },
+                handleStyle: {
+                    color: '#fff',
+                    shadowBlur: 3,
+                    shadowColor: 'rgba(0, 0, 0, 0.6)',
+                    shadowOffsetX: 2,
+                    shadowOffsetY: 2
+                }
+            }],
+        series: [
+            {
+                name: '日线',
+                type: 'candlestick',
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                data: [],
+                itemStyle: {
+                    normal: {
+                        color: 'transparent',
+                        color0: color_green,
+                        borderColor: color_red,
+                        borderColor0: color_green
+                    }
+                },
+                markPoint: {  // 标记最大最小值
+                    symbol: 'circle',
+                    symbolSize: function(value, param) {
+                        let size = 15
+                        if (param.name === '最高价' || param.name === '最低价') {
+                            size = 0.1
+                        }
+                        return size
+                    },
+                    label: {
+                        show: true,
+                        fontSize: 12,
+                        color: '#fff',
+                        formatter: function(param) {
+                            let val = ''
+                            if (param.name === '标点') {
+                                val = param.value
+                            } else if (param.name === '最低价') {
+                                val = param.value + ' →'
+                            } else if (param.name === '最高价') {
+                                val = '← ' + param.value
+                            }
+                            return val
+                        }
+                    },
+                    data: [{
+                        name: "最高价",
+                        type: "max",
+                        valueDim: 'highest',
+                        symbolOffset: [20,0],
+                    },
+                        {
+                            name: "最低价",
+                            type: "min",
+                            valueDim: 'lowest',
+                            symbolOffset: [-20,0],
+                        }
+                    ]
+                },
+            },
+            {
+                name: 'MA10',
+                type: 'line',
+                data: [],
+                smooth: true,
+                showSymbol: false,
+                lineStyle: {
+                    normal: {
+                        color: '#990099',
+                        width: 1,
+                        opacity: 0.7
+                    }
+                }
+            },
+            {
+                name: 'MA20',
+                type: 'line',
+                data: [],
+                smooth: true,
+                showSymbol: false,
+                lineStyle: {
+                    normal: {
+                        color: '#1e8700',
+                        width: 1,
+                        opacity: 0.7
+                    }
+                }
+            },
+            {
+                name: 'MA30',
+                type: 'line',
+                data: [],
+                smooth: true,
+                showSymbol: false,
+                lineStyle: {
+                    normal: {
+                        color: '#009595',
+                        width: 1,
+                        opacity: 0.7
+                    }
+                }
+            },
+            {
+                name: 'MACD',
+                type: 'bar',
+                barWidth: '10%',
+                xAxisIndex: 1,
+                yAxisIndex: 1,
+                data: [],
+            },
+            {
+                name: 'DIF',
+                type: 'line',
+                showSymbol: false,
+                smooth: true,
+                data: [],
+                lineStyle: {
+                    normal: {
+                        color: '#ffffff',
+                        width: 1
+                    }
+                }
+            },
+            {
+                name: 'DEA',
+                type: 'line',
+                showSymbol: false,
+                smooth: true,
+                data: [],
+                lineStyle: {
+                    normal: {
+                        color: '#ffee00',
+                        width: 1
+                    }
+                }
+            },
+            {
+                name: '成交量',
+                type: 'bar',
+                barWidth: '70%',
+                xAxisIndex: 2,
+                yAxisIndex: 2,
+                data: []
+            },
+            {
+                name: '旧笔',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                smooth: false,
+                showSymbol: true,
+                lineStyle: {
+                    normal: {
+                        color: '#ff7ae1',
+                        width: 1
+                    }
+                }
+            },{
+                name: '笔',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                smooth: false,
+                showSymbol: true,
+                lineStyle: {
+                    normal: {
+                        color: '#ff7ae1',
+                        width: 1
+                    }
+                }
+            },{
+                name: '线段',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                smooth: false,
+                showSymbol: true,
+                lineStyle: {
+                    normal: {
+                        color: '#ffee00',
+                        width: 1,
+                        type: 'dashed'
+                    }
+                }
+            },{
+                name: '中枢',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markArea: {
+                    silent: true,
+                    itemStyle: {
+                        normal: {
+                            color: 'rgb(58,164,255, 0.2)',
+                        }
+                    },
+                    data: []
+                },
+            },{
+                name: '一买',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    symbolRotate: 180,
+                    silent: true,
+                    itemStyle: {
+                        color: "#ffffff"
+                    }
+                }
+            },{
+                name: '二买',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    symbolRotate: 180,
+                    silent: true,
+                    itemStyle: {
+                        color: "#fff400"
+                    }
+                }
+            },{
+                name: '三买',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    symbolRotate: 180,
+                    silent: true,
+                    itemStyle: {
+                        color: "#77ff00"
+                    }
+                }
+            },{
+                name: '一卖',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    silent: true,
+                    itemStyle: {
+                        color: "#fda452"
+                    }
+                }
+            },{
+                name: '二卖',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    silent: true,
+                    itemStyle: {
+                        color: "#00c4ff"
+                    }
+                }
+            },{
+                name: '三卖',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    silent: true,
+                    itemStyle: {
+                        color: "#ff0066"
+                    }
+                }
+            },{
+                name: '历史买点',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    symbolRotate: 180,
+                    silent: true,
+                    itemStyle: {
+                        color: "#00545a"
+                    }
+                }
+            },{
+                name: '历史卖点',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    silent: true,
+                    itemStyle: {
+                        color: "#7f3900"
+                    }
+                }
+            },{
+                name: '更新判断',
+                type: 'line',
+                data: [],
+                xAxisIndex: 0,
+                yAxisIndex: 0,
+                markPoint: {
+                    data: [],
+                    silent: true,
+                    itemStyle: {
+                        color: "#44ff00"
+                    }
+                }
+            }
+        ]
+    };
+
+    myChart.setOption(option);
+    window.onresize = function(){myChart.resize();}  // 动态设置大小
+</script>
+</body>
+</html>
